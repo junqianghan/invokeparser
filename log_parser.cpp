@@ -8,16 +8,21 @@
 #include <fstream>
 #include <memory>
 #include <deque>
+#include <regex>
 
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+using std::to_string;
 using std::vector;
 using std::ifstream;
 using std::shared_ptr;
 using std::make_shared;
 using std::deque;
+using std::regex;
+using std::smatch;
+using std::regex_match;
 
 LogParser::LogParser(const std::string &corr_id,std::function<std::string (std::string)> getDateTime):corr_id_(corr_id)
 {
@@ -40,6 +45,9 @@ std::shared_ptr<ServiceNode> LogParser::parser()
     string dirPath = getDirPath();
     vector<string> fileList;
     readFileList(dirPath,fileList);
+
+    string time_pre,time_last;
+    int ret = getTimeFromDatetime(datetime_,time_pre,time_last,2);
     for(auto f:fileList)
     {
         ifstream fs(f);
@@ -50,6 +58,12 @@ std::shared_ptr<ServiceNode> LogParser::parser()
             {
                 PatternParser patternParser(s);
                 LogData logData = patternParser.match();
+
+                if(logData.time<time_pre)
+                    continue;
+                if(logData.time>time_last)
+                    break;
+
 
                 if(logData.corr_id != corr_id_)
                     continue;
@@ -101,34 +115,7 @@ std::shared_ptr<ServiceNode> LogParser::parser()
         }
     }
 
-//    cout<<resMsgNum<<endl;
-    int ret = getFreeNodes(resMsgNum);
-//    cout<<freeNodes.size()<<endl;
-
-
-//    for(auto pair:requestToResponses)
-//    {
-//        string requestName = pair.first;
-//        auto responseNames = pair.second;
-//        cout<<requestName<<" : ";
-//        for(auto i:responseNames)
-//        {
-//            cout<<i<<",";
-//        }
-//        cout<<endl;
-//    }
-
-
-//    cout<<"-----"<<endl;
-//    for(auto& r:requestIdToApp)
-//    {
-//        cout<<r.first<<" "<<r.second<<endl;
-//    }
-
-//    for(auto& r:responseToRequest)
-//    {
-//        cout<<r.first<<" "<<r.second<<endl;
-//    }
+    ret = getFreeNodes(resMsgNum);
 
     ret = getServiceNodeTree();
 
@@ -142,6 +129,7 @@ std::shared_ptr<ServiceNode> LogParser::parser()
 }
 
 std::string LogParser::serialize() {
+
     if(!parsered)
     {
         parser();
@@ -176,7 +164,6 @@ std::string LogParser::serialize() {
         }
         ret += ";";
     }
-//    cout<<ret<<endl;
     return ret;
 }
 
@@ -235,6 +222,22 @@ int LogParser::getFreeNodes(unsigned int num) {
     return 0;
 }
 
-bool LogParser::isTimeValid(std::string &time) {
+int LogParser::getTimeFromDatetime(std::string &datetime, std::string &pre, std::string &last, int interval)
+{
+    regex regex_datetime("(.*)-(.*)");
+    smatch r;
+    int hour,min;
+    double sec;
+    if(regex_match(datetime,r,regex_datetime))
+    {
+        sscanf(r.str(2).c_str(),"%d:%d:%lf",&hour,&min,&sec);
+    }
+    else
+    {
+        return ERROR_LOG_PARSER_DATETIME_FORMAT;
+    }
 
+    pre = to_string(hour)+":"+to_string(min)+":"+to_string(int(sec));
+    last = to_string(hour)+":"+to_string(min+2)+":"+to_string(int(sec));
+    return 0;
 }

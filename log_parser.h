@@ -59,6 +59,8 @@ class LogParser
     int getServiceNodeTree();
 
     bool isTimeValid(std::string& time);
+
+    int getTimeFromDatetime(std::string& datetime, std::string& pre, std::string& last, int interval);
 };
 
 #endif //INVOKEPARSE_LOG_PARSER_H

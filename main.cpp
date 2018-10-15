@@ -7,6 +7,7 @@ int main()
 {
     LogParser logParser("ejsQ5ufDFCmyHG6v","20180902-13:26:44.94");
     string s = logParser.serialize();
+    cout<<s<<endl;
 
     return 0;
 }
