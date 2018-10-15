@@ -106,20 +106,20 @@ std::shared_ptr<ServiceNode> LogParser::parser()
 //    cout<<freeNodes.size()<<endl;
 
 
-    for(auto pair:requestToResponses)
-    {
-        string requestName = pair.first;
-        auto responseNames = pair.second;
-        cout<<requestName<<" : ";
-        for(auto i:responseNames)
-        {
-            cout<<i<<",";
-        }
-        cout<<endl;
-    }
+//    for(auto pair:requestToResponses)
+//    {
+//        string requestName = pair.first;
+//        auto responseNames = pair.second;
+//        cout<<requestName<<" : ";
+//        for(auto i:responseNames)
+//        {
+//            cout<<i<<",";
+//        }
+//        cout<<endl;
+//    }
 
 
-    cout<<"-----"<<endl;
+//    cout<<"-----"<<endl;
 //    for(auto& r:requestIdToApp)
 //    {
 //        cout<<r.first<<" "<<r.second<<endl;
@@ -176,7 +176,7 @@ std::string LogParser::serialize() {
         }
         ret += ";";
     }
-    cout<<ret<<endl;
+//    cout<<ret<<endl;
     return ret;
 }
 
