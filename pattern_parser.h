@@ -15,6 +15,7 @@ class PatternParser
 
   private:
     std::string src_;
+
     LogData logData;
 
     void regex_to_logData_generate(const std::smatch& r, LogData& logData);

@@ -1,20 +1,35 @@
 #include "log_parser.h"
 #include "file_io.h"
 #include "pattern_parser.h"
+#include "errorid.h"
 #include <iostream>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <memory>
+#include <deque>
 using std::cout;
+using std::cerr;
 using std::endl;
 using std::string;
 using std::vector;
 using std::ifstream;
+using std::shared_ptr;
 using std::make_shared;
+using std::deque;
 
 std::shared_ptr<ServiceNode> LogParser::parser()
 {
+
+    if(parsered)
+    {
+        return root;
+    }
+    else
+    {
+        parsered = true;
+    }
+
     string dirPath = getDirPath();
     vector<string> fileList;
     readFileList(dirPath,fileList);
@@ -45,7 +60,6 @@ std::shared_ptr<ServiceNode> LogParser::parser()
     {
         if(l.log_type == LogData::LogType::REQ_FINISH_MSG)
         {
-            cout<<l.app_name<<endl;
             root = make_shared<ServiceNode>(l.app_name);
         }
 
@@ -56,42 +70,145 @@ std::shared_ptr<ServiceNode> LogParser::parser()
         }
     }
 
+    unsigned resMsgNum = 0;     //node number of res msg.
     for(auto& l:logDatas)
     {
         if(l.log_type == LogData::LogType::RES_MSG)
         {
+            ++resMsgNum;
             string res_ri = l.ri;
             if(requestIdToApp.find(res_ri) != requestIdToApp.end())
             {
-                responseToRequest.insert({l.app_name,requestIdToApp[res_ri]});
+                string requestName = requestIdToApp[res_ri];
+                string responseName = l.app_name;
+                responseToRequest.insert({responseName,requestName});
+                requestToResponses[requestName].insert(responseName);
             }
             else
             {
-                cout<<"not found"<<endl;
+                cerr<<"not found"<<endl;
+                errorid = ERROR_LOG_PARSER_NO_APP_FROM_RI;
+                root = nullptr;
+                return root;
             }
         }
     }
 
-    for(auto& r:requestIdToApp)
+//    cout<<resMsgNum<<endl;
+    int ret = getFreeNodes(resMsgNum);
+//    cout<<freeNodes.size()<<endl;
+
+
+    for(auto pair:requestToResponses)
     {
-        cout<<r.first<<" "<<r.second<<endl;
+        string requestName = pair.first;
+        auto responseNames = pair.second;
+        cout<<requestName<<" : ";
+        for(auto i:responseNames)
+        {
+            cout<<i<<",";
+        }
+        cout<<endl;
     }
 
 
-    cout<<"---------"<<endl;
+    cout<<"-----"<<endl;
+//    for(auto& r:requestIdToApp)
+//    {
+//        cout<<r.first<<" "<<r.second<<endl;
+//    }
 
+//    for(auto& r:responseToRequest)
+//    {
+//        cout<<r.first<<" "<<r.second<<endl;
+//    }
 
-    for(auto& r:responseToRequest)
+    ret = getServiceNodeTree();
+
+    if(ret)
     {
-        cout<<r.first<<" "<<r.second<<endl;
+        errorid = ret;
+        root = nullptr;
     }
 
-    cout<<"---------"<<endl;
+    return root;
+}
+
+std::string LogParser::serialize() {
+    if(!parsered)
+    {
+        parser();
+        parsered = true;
+    }
+
+    if(!root)
+    {
+        return string();
+    }
+
+    string ret;
+
+    deque<shared_ptr<ServiceNode>> nodeDeque;
+    nodeDeque.push_back(root);
+
+    while(nodeDeque.size())
+    {
+        shared_ptr<ServiceNode> node = nodeDeque.front();
+        nodeDeque.pop_front();
+
+        ret = ret + node->name + ":";
+        if(node->childs.size() == 0)
+        {
+            ret += ";";
+            continue;
+        }
+        for(auto i:node->childs)
+        {
+            nodeDeque.push_back(i);
+            ret = ret + i->name + ",";
+        }
+        ret += ";";
+    }
+    cout<<ret<<endl;
+    return ret;
+}
 
 
+int LogParser::getServiceNodeTree()
+{
+    if(!root)
+        return ERROR_LOG_PARSER_ROOT_NULL;
+    deque<string> appDeque;
+    deque<shared_ptr<ServiceNode>> nodeDeque;
 
+    appDeque.push_back(root->name);
+    nodeDeque.push_back(root);
 
-    return make_shared<ServiceNode>();
+    while(nodeDeque.size())
+    {
+        shared_ptr<ServiceNode> pNode = nodeDeque.front();
+        nodeDeque.pop_front();
+        string currAppName = pNode->name;
+        for(auto response:requestToResponses[currAppName])
+        {
+            if(freeNodes.size() == 0)
+            {
+                return ERROR_LOG_PARSER_NO_FREENODE;
+            }
+            shared_ptr<ServiceNode> node = freeNodes.back();
+            freeNodes.pop_back();
+            node->name = response;
+            node->parent = pNode;
+            pNode->childs.push_back(node);
+            nodeDeque.push_back(node);
+        }
+        if(requestToResponses.size() == 0)
+        {
+            break;
+        }
+    }
+
+    return 0;
 }
 
 std::string LogParser::getDirPath()
@@ -101,4 +218,12 @@ std::string LogParser::getDirPath()
     dirPath[pos] = '/';
     dirPath = "../log/"+dirPath;
     return dirPath;
+}
+
+int LogParser::getFreeNodes(unsigned int num) {
+    for(unsigned i=0;i<num;++i)
+    {
+        freeNodes.push_back(make_shared<ServiceNode>());
+    }
+    return 0;
 }

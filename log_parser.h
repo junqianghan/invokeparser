@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include "def.h"
 struct ServiceNode
 {
@@ -24,18 +25,36 @@ class LogParser
 
     std::shared_ptr<ServiceNode> parser();
 
+    std::string serialize();
+
+    int getErrorId()
+    {
+        return errorid;
+    }
+
   private:
 
     std::string corr_id_;
     std::string datetime_;    //date:time
 
-    std::shared_ptr<ServiceNode> root;  //根节点
+    int errorid;
+    bool parsered = false;
+
+    std::shared_ptr<ServiceNode> root;  //root node
+    std::vector<std::shared_ptr<ServiceNode>> freeNodes;    // node vector valid.
 
     std::vector<LogData> logDatas;
 
-    std::unordered_map<std::string,std::string> requestIdToApp;
-    std::unordered_map<std::string,std::string> responseToRequest;
+    std::unordered_map<std::string,std::string> requestIdToApp;     //hashmap, from requestid to appname which generate this requestid
+    std::unordered_map<std::string,std::string> responseToRequest;  //hashmap, from appname which response to appname which request
+    std::unordered_map<std::string,std::unordered_set<std::string>> requestToResponses;    //hashmap, from appname which request to appname list which response.
+  private:
+
     std::string getDirPath();
+
+    int getFreeNodes(unsigned int num);
+
+    int getServiceNodeTree();
 };
 
 #endif //INVOKEPARSE_LOG_PARSER_H

@@ -44,7 +44,8 @@ int main()
 //    pattern_match(s3,logData);
 //    cout<<logData<<endl;
     LogParser logParser("ejsQ5ufDFCmyHG6v","20180902:14");
-    logParser.parser();
+//    logParser.parser();
+    string s = logParser.serialize();
 //    string app;
 //    filenameParser("./log/20180902/14/A/1.log",app);
 //    cout<<app<<endl;
