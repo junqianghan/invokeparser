@@ -43,7 +43,8 @@ int main()
 //    cout<<logData<<endl;
 //    pattern_match(s3,logData);
 //    cout<<logData<<endl;
-    LogParser logParser("ejsQ5ufDFCmyHG6v","20180902:14");
+    LogParser logParser("ejsQ5ufDFCmyHG6v","20180902-13:26:44.94");
+//    LogParser logParser("ejsQ5ufDFCmyHG6v","20180902:13");
 //    logParser.parser();
     string s = logParser.serialize();
 //    string app;

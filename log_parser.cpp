@@ -8,6 +8,7 @@
 #include <fstream>
 #include <memory>
 #include <deque>
+
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -17,6 +18,12 @@ using std::ifstream;
 using std::shared_ptr;
 using std::make_shared;
 using std::deque;
+
+LogParser::LogParser(const std::string &corr_id,std::function<std::string (std::string)> getDateTime):corr_id_(corr_id)
+{
+    datetime_ = getDateTime(corr_id_);
+}
+
 
 std::shared_ptr<ServiceNode> LogParser::parser()
 {
@@ -63,11 +70,11 @@ std::shared_ptr<ServiceNode> LogParser::parser()
             root = make_shared<ServiceNode>(l.app_name);
         }
 
-
         if(l.log_type == LogData::LogType::REQ_GENERATE_MSG)
         {
             requestIdToApp.insert({l.ri,l.app_name});
         }
+
     }
 
     unsigned resMsgNum = 0;     //node number of res msg.
@@ -213,8 +220,8 @@ int LogParser::getServiceNodeTree()
 
 std::string LogParser::getDirPath()
 {
-    string dirPath = datetime_;
-    unsigned long pos = dirPath.find(':');
+    string dirPath(datetime_,0,11);
+    unsigned long pos = dirPath.find('-');
     dirPath[pos] = '/';
     dirPath = "../log/"+dirPath;
     return dirPath;
@@ -226,4 +233,8 @@ int LogParser::getFreeNodes(unsigned int num) {
         freeNodes.push_back(make_shared<ServiceNode>());
     }
     return 0;
+}
+
+bool LogParser::isTimeValid(std::string &time) {
+
 }

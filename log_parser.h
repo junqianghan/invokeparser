@@ -6,6 +6,7 @@
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
+#include <functional>
 #include "def.h"
 struct ServiceNode
 {
@@ -22,6 +23,7 @@ class LogParser
 {
   public:
     explicit LogParser(const std::string& corr_id, const std::string& datetime):corr_id_(corr_id),datetime_(datetime){}
+    explicit LogParser(const std::string& corr_id, std::function<std::string (std::string)> getDateTime);
 
     std::shared_ptr<ServiceNode> parser();
 
@@ -35,7 +37,7 @@ class LogParser
   private:
 
     std::string corr_id_;
-    std::string datetime_;    //date:time
+    std::string datetime_;    //date-hour:min:sec
 
     int errorid;
     bool parsered = false;
@@ -55,6 +57,8 @@ class LogParser
     int getFreeNodes(unsigned int num);
 
     int getServiceNodeTree();
+
+    bool isTimeValid(std::string& time);
 };
 
 #endif //INVOKEPARSE_LOG_PARSER_H
