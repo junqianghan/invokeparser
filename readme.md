@@ -7,6 +7,8 @@ git clone https://github.com/junqianghan/invokeparser.git
 
 提供 make 和 cmake 两种方式，都可完成编译。
 
+g++ : 5.4.0
+
 make  
 or  
 mkdir build && cd build  
